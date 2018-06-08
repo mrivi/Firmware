@@ -6,12 +6,6 @@ uint8 POINT_2 = 2
 uint8 POINT_3 = 3
 uint8 POINT_4 = 4
 
-uint8 X = 0
-uint8 Y = 1
-uint8 Z = 2
-uint8 TIME_HORIZON = 3
-uint8 YAW = 4
-
 uint8 MAV_TRAJECTORY_REPRESENTATION_BEZIER = 1
 
 uint8 type # Type from MAV_TRAJECTORY_REPRESENTATION enum.
