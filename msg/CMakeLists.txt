@@ -107,6 +107,7 @@ set(msg_files
 	test_motor.msg
 	timesync_status.msg
 	transponder_report.msg
+	trajectory_waypoint.msg
 	tune_control.msg
 	uavcan_parameter_request.msg
 	uavcan_parameter_value.msg
