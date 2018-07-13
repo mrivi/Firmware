@@ -44,4 +44,5 @@ px4_add_module(
 		flight_tasks
 		git_ecl
 		ecl_geo
+		trajectory
 	)

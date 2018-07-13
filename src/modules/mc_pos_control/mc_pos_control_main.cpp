@@ -76,6 +76,7 @@
 #include <controllib/blocks.hpp>
 
 #include <lib/FlightTasks/FlightTasks.hpp>
+#include <lib/trajectory/Trajectory.hpp>
 #include "PositionControl.hpp"
 #include "Utility/ControlMath.hpp"
 
@@ -250,6 +251,8 @@ private:
 
 	FlightTasks _flight_tasks; /**< class handling all ways to generate position controller setpoints */
 	PositionControl _control{}; /**< class handling the core PID position controller */
+
+	Trajectory _trajectory;
 
 	systemlib::Hysteresis _manual_direction_change_hysteresis;
 
@@ -3084,6 +3087,8 @@ MulticopterPositionControl::task_main()
 
 		parameters_update(false);
 
+		_trajectory.updateSubscritpions();
+
 		hrt_abstime t = hrt_absolute_time();
 		const float dt = t_prev != 0 ? (t - t_prev) / 1e6f : 0.004f;
 		t_prev = t;
@@ -3207,13 +3212,17 @@ MulticopterPositionControl::task_main()
 			/* make sure to disable any task when we are not testing them */
 			_flight_tasks.switchTask(FlightTaskIndex::None);
 		}
+		
+		vehicle_local_position_setpoint_s sp_traj = _trajectory.updateLocalPositionSetpoint();
+		PX4_INFO("%f %f %f \n", (double)sp_traj.x, (double)sp_traj.y, (double)sp_traj.z);
 
 		if (_test_flight_tasks.get() && _flight_tasks.isAnyTaskActive()) {
 
 			_flight_tasks.update();
 
 			/* Get Flighttask setpoints */
-			vehicle_local_position_setpoint_s setpoint = _flight_tasks.getPositionSetpoint();
+			vehicle_local_position_setpoint_s setpoint = _trajectory.updateLocalPositionSetpoint(); //_flight_tasks.getPositionSetpoint();
+			PX4_INFO("%f %f %f \n", (double)setpoint.x, (double)setpoint.y, (double)setpoint.z);
 
 			/* Get _contstraints depending on flight mode
 			 * This logic will be set by FlightTasks */
