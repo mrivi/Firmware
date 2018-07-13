@@ -18,6 +18,11 @@
  */
 
 #pragma once
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+
 #include "SingleAxisTrajectory.h"
 #include "Vec3.h"
 
