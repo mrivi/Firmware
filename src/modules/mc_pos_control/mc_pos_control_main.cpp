@@ -642,9 +642,11 @@ MulticopterPositionControl::task_main()
 			// Update states, setpoints and constraints.
 			_control.updateConstraints(constraints);
 			_control.updateState(_states);
-			_control.updateSetpoint(setpoint);
 
-			if (use_obstacle_avoidance()) {
+			if (!use_obstacle_avoidance()) {
+				_control.updateSetpoint(setpoint);
+
+			} else {
 				execute_avoidance_waypoint();
 			}
 
