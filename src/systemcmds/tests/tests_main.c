@@ -125,6 +125,7 @@ const struct {
 	{"ppm",			test_ppm,	OPT_NOJIGTEST | OPT_NOALLTEST},
 	{"ppm_loopback",	test_ppm_loopback,	OPT_NOALLTEST},
 	{"rc",			test_rc,	OPT_NOJIGTEST | OPT_NOALLTEST},
+	{"search_min",	test_search_min, 0},
 	{"servo",		test_servo,	OPT_NOJIGTEST | OPT_NOALLTEST},
 	{"sleep",		test_sleep,	OPT_NOJIGTEST},
 	{"tone",		test_tone,	0},

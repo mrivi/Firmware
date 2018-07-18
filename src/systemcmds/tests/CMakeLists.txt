@@ -70,6 +70,7 @@ set(srcs
 	test_versioning.cpp
 	test_smooth_z.cpp
 	test_controlmath.cpp
+	test_search_min.cpp
 	tests_main.c
 	)
 

@@ -73,6 +73,7 @@ extern int	test_microbench_hrt(int argc, char *argv[]);
 extern int	test_microbench_math(int argc, char *argv[]);
 extern int	test_microbench_matrix(int argc, char *argv[]);
 extern int	test_microbench_uorb(int argc, char *argv[]);
+extern int 	test_search_min(int argc, char *argv[]);
 extern int	test_mixer(int argc, char *argv[]);
 extern int	test_mount(int argc, char *argv[]);
 extern int	test_param(int argc, char *argv[]);
