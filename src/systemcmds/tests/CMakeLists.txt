@@ -71,6 +71,7 @@ set(srcs
 	test_smooth_z.cpp
 	test_controlmath.cpp
 	test_search_min.cpp
+	test_bezierQuad.cpp
 	tests_main.c
 	)
 
