@@ -79,7 +79,7 @@ void StraightLine::generateSetpoints(matrix::Vector3f &position_setpoint, matrix
 	float speed_sp_prev = math::max(velocity_setpoint * u_orig_to_target, 0.0f);
 
 	// Calculate braking distance depending on speed, speed at target and deceleration (add 10% safety margin)
-	float braking_distance = 1.1f * (powf(_desired_speed - _desired_speed_at_target, 2) / (2.0f * _desired_deceleration));
+	float braking_distance = 1.1f * ((powf(_desired_speed, 2) - powf(_desired_speed_at_target, 2)) / (2.0f * _desired_deceleration));
 
 	float dist_to_target = (_target - _pos).length(); // distance to target
 
