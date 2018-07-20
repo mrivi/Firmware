@@ -253,6 +253,8 @@ private:
 
 	systemlib::Hysteresis _manual_direction_change_hysteresis;
 
+	systemlib::Hysteresis _progress_to_curr_sp;
+
 	math::LowPassFilter2p _filter_manual_pitch;
 	math::LowPassFilter2p _filter_manual_roll;
 
@@ -286,6 +288,7 @@ private:
 	matrix::Vector3f _thrust_int;
 	matrix::Vector3f _pos;
 	matrix::Vector3f _pos_sp;
+	matrix::Vector3f _prev_pos;
 	matrix::Vector3f _vel;
 	matrix::Vector3f _vel_sp;
 	matrix::Vector3f _vel_prev;			/**< velocity on previous step */
@@ -420,6 +423,7 @@ private:
 	/**
 	 * trajectory generation
 	 */
+	void check_avoidance_auto_progress(matrix::Vector2f &closest_pt_on_prev_to_curr);
 	void execute_avoidance_position_waypoint();
 
 	void execute_avoidance_velocity_waypoint();
@@ -498,6 +502,7 @@ MulticopterPositionControl::MulticopterPositionControl() :
 	_vel_y_deriv(this, "VELD"),
 	_vel_z_deriv(this, "VELD"),
 	_manual_direction_change_hysteresis(false),
+	_progress_to_curr_sp(false),
 	_filter_manual_pitch(50.0f, 10.0f),
 	_filter_manual_roll(50.0f, 10.0f),
 	_user_intention_xy(brake),
@@ -528,9 +533,11 @@ MulticopterPositionControl::MulticopterPositionControl() :
 
 	/* set trigger time for manual direction change detection */
 	_manual_direction_change_hysteresis.set_hysteresis_time_from(false, DIRECTION_CHANGE_TRIGGER_TIME_US);
+	_progress_to_curr_sp.set_hysteresis_time_from(false, TRAJECTORY_STREAM_TIMEOUT_US * 10);
 
 	_pos.zero();
 	_pos_sp.zero();
+	_prev_pos.zero();
 	_vel.zero();
 	_vel_sp.zero();
 	_vel_prev.zero();
@@ -2012,6 +2019,7 @@ void MulticopterPositionControl::control_auto()
 				float vel_sp_along_track_prev = matrix::Vector2f(_vel_sp(0), _vel_sp(1)) * unit_prev_to_current;
 
 				if (use_obstacle_avoidance()) {
+					check_avoidance_auto_progress(closest_point);
 					vel_sp_along_track_prev = matrix::Vector2f(&_vel_sp_desired(0)) * unit_prev_to_current;
 				}
 
@@ -2350,6 +2358,7 @@ MulticopterPositionControl::update_velocity_derivative()
 	    PX4_ISFINITE(_local_pos.y) &&
 	    PX4_ISFINITE(_local_pos.z)) {
 
+		_prev_pos = _pos;
 		_pos(0) = _local_pos.x;
 		_pos(1) = _local_pos.y;
 
@@ -3478,6 +3487,27 @@ MulticopterPositionControl::execute_avoidance_position_waypoint()
 
 	_pos_sp = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].position;
 
+}
+
+void
+MulticopterPositionControl::check_avoidance_auto_progress(matrix::Vector2f &closest_pt_on_prev_to_curr)
+{
+
+	matrix::Vector2f prev_sp_xy = matrix::Vector2f(&_prev_pos_sp(0));
+	matrix::Vector2f curr_sp_xy = matrix::Vector2f(&_curr_pos_sp(0));
+	matrix::Vector2f prev_to_closest = closest_pt_on_prev_to_curr - prev_sp_xy;
+	matrix::Vector2f prev_to_curr = curr_sp_xy - prev_sp_xy;
+
+	const float prev_curr_travelled = prev_to_closest.length() / prev_to_curr.length();
+
+	const float dist_to_curr = (_curr_pos_sp - _pos).length();
+	const float prev_dist_to_curr = (_curr_pos_sp - _prev_pos).length();
+	const float slope = (dist_to_curr - prev_dist_to_curr) / _dt;
+	_progress_to_curr_sp.set_state_and_update(slope > 0.0f);
+
+	if ((prev_curr_travelled > 1.0f) || _progress_to_curr_sp.get_state()) {
+		// bool update_triplets = true;
+	}
 }
 
 void
