@@ -39,28 +39,23 @@
 #include <mathlib/mathlib.h>
 #include <float.h>
 
-#define ACC_RAD_ZERO_VEL 2.0f
-#define VEL_ZERO_THRESHOLD 0.001f
-#define DECELERATION_MAX 8.0f
+#define VEL_ZERO_THRESHOLD 0.001f // Threshold to compare if the target velocity is zero
+#define DECELERATION_MAX 8.0f     // The vehicles maximum deceleration TODO check to create param
 
 using namespace matrix;
 
-StraightLine::StraightLine(ModuleParams *parent, const float &deltatime, const matrix::Vector3f &pos,
-			   const matrix::Vector3f &vel) :
+StraightLine::StraightLine(ModuleParams *parent, const float &deltatime, const matrix::Vector3f &pos) :
 	ModuleParams(parent),
-	_deltatime(deltatime), _pos(pos), _vel(vel)
+	_deltatime(deltatime), _pos(pos)
 {
-	// printf("StraightLine::StraightLine \n");
+
 }
 
 void StraightLine::generateSetpoints(matrix::Vector3f &position_setpoint, matrix::Vector3f &velocity_setpoint)
 {
-	// printf("_is_target_reached %d %d %d \n", _is_target_reached, _desired_speed_at_target < VEL_ZERO_THRESHOLD, (_pos - _target).length() < ACC_RAD_ZERO_VEL);
 	// Check if target position has been reached
-	// printf("pos %f %f %f \n", (double)_pos(0), (double)_pos(1), (double)_pos(2));
-	// printf("_target %f %f %f \n", (double)_target(0), (double)_target(1), (double)_target(2));
 	if (_is_target_reached || (_desired_speed_at_target < VEL_ZERO_THRESHOLD &&
-				   (_pos - _target).length() < ACC_RAD_ZERO_VEL)) {
+				   (_pos - _target).length() < NAV_ACC_RAD.get())) {
 		// Vehicle has reached target. Lock position
 		position_setpoint = _target;
 		velocity_setpoint = Vector3f(0.0f, 0.0f, 0.0f);
@@ -78,17 +73,15 @@ void StraightLine::generateSetpoints(matrix::Vector3f &position_setpoint, matrix
 	// previous velocity in the direction of the line
 	float speed_sp_prev = math::max(velocity_setpoint * u_orig_to_target, 0.0f);
 
-	// Calculate braking distance depending on speed, speed at target and deceleration (add 10% safety margin)
-	float braking_distance = 1.1f * ((powf(_desired_speed, 2) - powf(_desired_speed_at_target, 2)) / (2.0f * _desired_deceleration));
+	// Calculate accelerating/decelerating distance depending on speed, speed at target and acceleration/deceleration (add 10% safety margin)
+	float acc_dec_distance = 1.1f * fabs(powf(_desired_speed, 2) - powf(_desired_speed_at_target, 2)) / 2.0f;
+	acc_dec_distance /= _desired_speed > _desired_speed_at_target ? _desired_deceleration : _desired_acceleration;
 
 	float dist_to_target = (_target - _pos).length(); // distance to target
 
-	// printf("_desired_speed = %f _desired_speed_at_target = %f\n", (double)_desired_speed, (double)_desired_speed_at_target);
-	// printf("braking_distance = %f dist_to_target = %f\n", (double)braking_distance, (double)dist_to_target);
 	// Either accelerate or decelerate
-	float speed_sp    = dist_to_target > braking_distance ? _desired_speed        :  _desired_speed_at_target;
-	// printf("speed_sp1 = %f\n", (double)speed_sp);
-	float max_acc_dec = dist_to_target > braking_distance ? _desired_acceleration : -_desired_deceleration;
+	float speed_sp    = dist_to_target > acc_dec_distance ? _desired_speed        :  _desired_speed_at_target;
+	float max_acc_dec = speed_sp > speed_sp_prev          ? _desired_acceleration : -_desired_deceleration;
 
 	float acc_track = (speed_sp - speed_sp_prev) / _deltatime;
 
@@ -96,13 +89,10 @@ void StraightLine::generateSetpoints(matrix::Vector3f &position_setpoint, matrix
 		// accelerate/decelerate with desired acceleration/deceleration towards target
 		speed_sp = speed_sp_prev + max_acc_dec * _deltatime;
 	}
-	// printf("speed_sp2 = %f\n", (double)speed_sp);
 
 	// constrain the velocity
 	speed_sp = math::constrain(speed_sp, 0.0f, _desired_speed);
-	// printf("_pos = %f %f %f  _target = %f %f %f\n", (double)_pos(0), (double)_pos(1), (double)_pos(2), (double)_target(0), (double)_target(1), (double)_target(2));
-	// printf("speed_sp3 = %f\n", (double)speed_sp);
-	// printf("position_setpoint = %f %f %f  velocity_setpoint = %f %f %f\n", (double)position_setpoint(0), (double)position_setpoint(1), (double)position_setpoint(2), (double)velocity_setpoint(0), (double)velocity_setpoint(1), (double)velocity_setpoint(2));
+
 	// set the position and velocity setpoints
 	position_setpoint = closest_pt_on_line;
 	velocity_setpoint = u_orig_to_target * speed_sp;
@@ -120,6 +110,7 @@ float StraightLine::getMaxAcc()
 
 	if (divider > FLT_EPSILON) {
 		max_acc_hor /= divider;
+
 	} else {
 		max_acc_hor *= 1000.0f;
 	}
@@ -130,6 +121,7 @@ float StraightLine::getMaxAcc()
 
 	if (fabs(u_orig_to_target(2)) > FLT_EPSILON) {
 		max_acc_vert /= fabs(u_orig_to_target(2));
+
 	} else {
 		max_acc_vert *= 1000.0f;
 	}
@@ -148,6 +140,7 @@ float StraightLine::getMaxVel()
 
 	if (divider > FLT_EPSILON) {
 		max_vel_hor /= divider;
+
 	} else {
 		max_vel_hor *= 1000.0f;
 	}
@@ -158,6 +151,7 @@ float StraightLine::getMaxVel()
 
 	if (fabs(u_orig_to_target(2)) > FLT_EPSILON) {
 		max_vel_vert /= fabs(u_orig_to_target(2));
+
 	} else {
 		max_vel_vert *= 1000.0f;
 	}
@@ -175,11 +169,10 @@ void StraightLine::setAllDefaults()
 
 void StraightLine::setTarget(const matrix::Vector3f &target)
 {
-	// printf("StraightLine::setTarget %f %f %f \n", (double)target(0), (double)target(1), (double)target(2));
 	if (PX4_ISFINITE(target(0)) && PX4_ISFINITE(target(1)) && PX4_ISFINITE(target(2))) {
 		_target = target;
 		_is_target_reached = false;
-		// printf("StraightLine::setTarget \n");
+
 		// set all parameters to their default value (depends on the direction)
 		setAllDefaults();
 	}
@@ -187,7 +180,6 @@ void StraightLine::setTarget(const matrix::Vector3f &target)
 
 void StraightLine::setOrigin(const matrix::Vector3f &origin)
 {
-	// printf("StraightLine::setOrigin %f %f %f \n", (double)origin(0), (double)origin(1), (double)origin(2));
 	if (PX4_ISFINITE(origin(0)) && PX4_ISFINITE(origin(1)) && PX4_ISFINITE(origin(2))) {
 		_origin = origin;
 	}
@@ -202,7 +194,6 @@ void StraightLine::setSpeed(const float &speed)
 
 void StraightLine::setSpeedAtTarget(const float &speed_at_target)
 {
-	// printf("setSpeedAtTarget speed_at_target %f < getMaxVel() %f \n", (double)speed_at_target, (double)getMaxVel() );
 	if (speed_at_target > 0 && speed_at_target < getMaxVel()) {
 		_desired_speed_at_target = speed_at_target;
 	}
