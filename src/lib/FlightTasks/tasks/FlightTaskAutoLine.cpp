@@ -45,13 +45,11 @@ using namespace matrix;
 
 bool FlightTaskAutoLine::activate()
 {
-	bool ret = FlightTaskAutoMapper::activate();
-	//_reset();
-	return ret;
+	return FlightTaskAutoMapper::activate();
 }
 
 
-void FlightTaskAutoLine::generateSetpoints()
+void FlightTaskAutoLine::_generateSetpoints()
 {
 	_updateInternalWaypoints();
 	_generateAltitudeSetpoints();

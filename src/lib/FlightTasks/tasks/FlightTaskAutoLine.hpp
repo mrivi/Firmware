@@ -50,7 +50,6 @@ public:
 	bool activate() override;
 
 protected:
-	void generateSetpoints() override;
 
 	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskAutoLine,
 					(ParamFloat<px4::params::MIS_YAW_ERR>) MIS_YAW_ERR, // yaw-error threshold
@@ -59,6 +58,7 @@ protected:
 					(ParamFloat<px4::params::MPC_ACC_HOR>) MPC_ACC_HOR // acceleration in flight
 				       )
 
+	void _generateSetpoints() override;
 	void _updateInternalWaypoints(); /**< Depending on state of vehicle, the internal waypoints might differ from target (for instance if offtrack). */
 	void _generateAltitudeSetpoints(); /**< Generate velocity and position setpoints for following line along z. */
 	void _generateXYsetpoints(); /**< Generate velocity and position setpoints for following line along xy. */

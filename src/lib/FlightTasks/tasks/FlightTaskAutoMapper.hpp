@@ -50,7 +50,6 @@ public:
 	virtual ~FlightTaskAutoMapper() = default;
 	bool activate() override;
 	bool update() override;
-	virtual void generateSetpoints() = 0; /**< Generate velocity and position setpoint for following line. */
 
 protected:
 
@@ -76,6 +75,8 @@ protected:
 					(ParamFloat<px4::params::MPC_TILTMAX_LND>) MPC_TILTMAX_LND,
 					(ParamFloat<px4::params::MPC_TKO_SPEED>) MPC_TKO_SPEED
 				       )
+
+	virtual void _generateSetpoints() = 0; /**< Generate velocity and position setpoint for following line. */
 
 	void _generateIdleSetpoints();
 	void _generateLandSetpoints();

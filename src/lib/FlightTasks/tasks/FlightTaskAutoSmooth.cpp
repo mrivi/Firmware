@@ -59,7 +59,7 @@ bool FlightTaskAutoSmooth::activate()
 	return ret;
 }
 
-void FlightTaskAutoSmooth::generateSetpoints()
+void FlightTaskAutoSmooth::_generateSetpoints()
 {
 
 	if (_control_points_update) {
