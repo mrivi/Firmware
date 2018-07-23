@@ -73,7 +73,13 @@ void FlightTaskAutoSmooth::_generateSetpoints()
 		float desired_vel = math::getVelocityFromAngle(angle, 1.0f, MPC_CRUISE_90.get(), _mc_cruise_speed);
 
 		// straight line
-		_sl.setTarget(_pt_0);
+		if (_type == WaypointType::loiter) {
+			_sl.setTarget(_target);
+
+		} else {
+			_sl.setTarget(_pt_0);
+		}
+
 		_sl.setOrigin(_prev_wp);
 		_sl.setSpeed(_mc_cruise_speed);
 		_sl.setSpeedAtTarget(desired_vel);
@@ -93,8 +99,8 @@ void FlightTaskAutoSmooth::_generateSetpoints()
 
 	Vector3f acceleration;
 
-	_pt_0_reached_once = _pt_0_reached_once || (Vector2f(&(_pt_0 - _position_setpoint)(0)).length() < 0.1f);
-	const bool pt_1_reached = Vector2f(&(_pt_1 - _position_setpoint)(0)).length() < 0.1f;
+	_pt_0_reached_once = _pt_0_reached_once || ((_pt_0 - _position_setpoint).length() < 0.1f);
+	const bool pt_1_reached = (_pt_1 - _position_setpoint).length() < 0.1f;
 
 	if (_pt_0_reached_once && !pt_1_reached) {
 		_b.getStatesClosest(_position_setpoint, _velocity_setpoint, acceleration, _position);
@@ -102,6 +108,7 @@ void FlightTaskAutoSmooth::_generateSetpoints()
 	} else if (!pt_1_reached) {
 		_control_points_update = true;
 		_sl.generateSetpoints(_position_setpoint, _velocity_setpoint);
+
 	}
 
 	if (pt_1_reached) {
