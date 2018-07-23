@@ -100,6 +100,7 @@ void FlightTaskAutoSmooth::_generateSetpoints()
 		_b.getStatesClosest(_position_setpoint, _velocity_setpoint, acceleration, _position);
 
 	} else if (!pt_1_reached) {
+		_control_points_update = true;
 		_sl.generateSetpoints(_position_setpoint, _velocity_setpoint);
 	}
 
