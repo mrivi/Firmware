@@ -80,7 +80,7 @@ bool FlightTaskAutoMapper::update()
 		_generateLandSetpoints();
 
 	} else if (follow_line) {
-		generateSetpoints();
+		_generateSetpoints();
 
 	} else if (_type == WaypointType::takeoff) {
 		_generateTakeoffSetpoints();

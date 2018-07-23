@@ -58,7 +58,7 @@ protected:
 				       )
 
 	void updateParams() override; /**< See ModuleParam class */
-	void generateSetpoints() override;
+	void _generateSetpoints() override;
 
 private:
 	bezier::BezierQuadf _b;
