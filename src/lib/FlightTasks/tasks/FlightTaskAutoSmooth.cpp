@@ -43,7 +43,7 @@ using namespace matrix;
 #define SIGMA_SINGLE_OP			0.000001f
 
 FlightTaskAutoSmooth::FlightTaskAutoSmooth() :
-	_sl(nullptr, _deltatime, _position, _velocity)
+	_sl(nullptr, _deltatime, _position)
 { }
 
 bool FlightTaskAutoSmooth::activate()
