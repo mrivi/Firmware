@@ -43,12 +43,12 @@ using namespace matrix;
 #define SIGMA_SINGLE_OP			0.000001f
 
 FlightTaskAutoSmooth::FlightTaskAutoSmooth() :
-	_sl(nullptr, _deltatime, _position, _velocity)
+	_sl(nullptr, _deltatime, _position)
 { }
 
 bool FlightTaskAutoSmooth::activate()
 {
-	bool ret = FlightTaskAuto::activate();
+	bool ret = FlightTaskAutoMapper::activate();
 
 	ret = ret && PX4_ISFINITE(_position(0))
 	      && PX4_ISFINITE(_position(1))
@@ -56,12 +56,12 @@ bool FlightTaskAutoSmooth::activate()
 	      && PX4_ISFINITE(_velocity(0))
 	      && PX4_ISFINITE(_velocity(1))
 	      && PX4_ISFINITE(_velocity(2));
-
 	return ret;
 }
 
-bool FlightTaskAutoSmooth::update()
+void FlightTaskAutoSmooth::_generateSetpoints()
 {
+
 	if (_control_points_update) {
 		_update_control_points();
 		_control_points_update = false;
@@ -98,6 +98,7 @@ bool FlightTaskAutoSmooth::update()
 
 	if (_pt_0_reached_once && !pt_1_reached) {
 		_b.getStatesClosest(_position_setpoint, _velocity_setpoint, acceleration, _position);
+
 	} else if (!pt_1_reached) {
 		_sl.generateSetpoints(_position_setpoint, _velocity_setpoint);
 	}
@@ -106,9 +107,6 @@ bool FlightTaskAutoSmooth::update()
 		_control_points_update = true;
 		_pt_0_reached_once = false;
 	}
-
-	return true;
-
 }
 
 void FlightTaskAutoSmooth::_update_control_points()

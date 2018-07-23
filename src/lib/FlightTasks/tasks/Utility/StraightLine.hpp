@@ -47,7 +47,7 @@
 class StraightLine : public ModuleParams
 {
 public:
-	StraightLine(ModuleParams *parent, const float &deltatime, const matrix::Vector3f &pos, const matrix::Vector3f &vel);
+	StraightLine(ModuleParams *parent, const float &deltatime, const matrix::Vector3f &pos);
 	~StraightLine() = default;
 
 	// setter functions
@@ -86,7 +86,6 @@ public:
 private:
 	const float &_deltatime;                 /**< delta time between last update (dependency injection) */
 	const matrix::Vector3f &_pos;            /**< vehicle position (dependency injection) */
-	const matrix::Vector3f &_vel;            /**< vehicle velocity (dependency injection) */
 
 	float _desired_acceleration{0.0f};       /**< acceleration along the straight line */
 	float _desired_deceleration{0.0f};       /**< deceleration along the straight line */
@@ -105,7 +104,8 @@ private:
 		(ParamFloat<px4::params::MPC_ACC_DOWN_MAX>) MPC_ACC_DOWN_MAX,  /**< maximum vertical acceleration downwards*/
 		(ParamFloat<px4::params::MPC_XY_VEL_MAX>)   MPC_XY_VEL_MAX,    /**< maximum horizontal velocity */
 		(ParamFloat<px4::params::MPC_Z_VEL_MAX_UP>) MPC_Z_VEL_MAX_UP,  /**< maximum vertical velocity upwards */
-		(ParamFloat<px4::params::MPC_Z_VEL_MAX_DN>) MPC_Z_VEL_MAX_DN   /**< maximum vertical velocity downwards */
+		(ParamFloat<px4::params::MPC_Z_VEL_MAX_DN>) MPC_Z_VEL_MAX_DN,  /**< maximum vertical velocity downwards */
+		(ParamFloat<px4::params::NAV_ACC_RAD>) NAV_ACC_RAD             /**< acceptance radius if a waypoint is reached */
 	)
 
 };
