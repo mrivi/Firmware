@@ -40,6 +40,9 @@
 
 using namespace matrix;
 
+#define SIGMA_SINGLE_OP			0.000001f
+#define SIGMA_NORM			0.001f
+
 bool FlightTaskAuto::initializeSubscriptions(SubscriptionArray &subscription_array)
 {
 	if (!FlightTask::initializeSubscriptions(subscription_array)) {
@@ -98,7 +101,7 @@ bool FlightTaskAuto::_evaluateTriplets()
 	// Check if triplet is valid. There must be at least a valid altitude.
 	if (!_sub_triplet_setpoint->get().current.valid || !PX4_ISFINITE(_sub_triplet_setpoint->get().current.alt)) {
 		// best we can do is to just set all waypoints to current state and return false
-		_prev_prev_wp = _prev_wp = _target = _next_wp = _position;
+		_prev_prev_wp = _triplet_prev_wp = _triplet_target = _triplet_next_wp = _position;
 		_type = WaypointType::position;
 		return false;
 	}
@@ -114,28 +117,68 @@ bool FlightTaskAuto::_evaluateTriplets()
 	}
 
 	// get target waypoint.
-	matrix::Vector3f target;
+	//matrix::Vector3f prev_target = target;
+	matrix::Vector3f tmp_target;
 
 	if (!PX4_ISFINITE(_sub_triplet_setpoint->get().current.lat)
 	    || !PX4_ISFINITE(_sub_triplet_setpoint->get().current.lon)) {
 		// No position provided in xy. Lock position
 		if (!PX4_ISFINITE(_lock_position_xy(0))) {
-			target(0) = _lock_position_xy(0) = _position(0);
-			target(1) = _lock_position_xy(1) = _position(1);
+			_triplet_target(0) = _lock_position_xy(0) = _position(0);
+			_triplet_target(1) = _lock_position_xy(1) = _position(1);
 
 		} else {
-			target(0) = _lock_position_xy(0);
-			target(1) = _lock_position_xy(1);
+			_triplet_target(0) = _lock_position_xy(0);
+			_triplet_target(1) = _lock_position_xy(1);
 			_lock_position_xy *= NAN;
 		}
 
 	} else {
 		// Convert from global to local frame.
 		map_projection_project(&_reference_position,
-				       _sub_triplet_setpoint->get().current.lat, _sub_triplet_setpoint->get().current.lon, &target(0), &target(1));
+				       _sub_triplet_setpoint->get().current.lat, _sub_triplet_setpoint->get().current.lon, &tmp_target(0), &tmp_target(1));
+		printf("proj tmp %f %f %f taregt %f %f %f \n",(double)tmp_target(0), (double)tmp_target(1), (double)tmp_target(2),
+		(double)_triplet_target(0), (double)_triplet_target(1), (double)_triplet_target(2) );
 	}
 
-	target(2) = -(_sub_triplet_setpoint->get().current.alt - _reference_altitude);
+	tmp_target(2) = -(_sub_triplet_setpoint->get().current.alt - _reference_altitude);
+
+	// Check if anything has changed. We do that by comparing the target
+	// setpoint to the previous target.
+	// TODO This is a hack and it would be much better if the navigator only sends out a waypoints once tthey have changed.
+	bool triplet_update = true;
+	// dont't do any updates if the current target has not changed
+	if (!(fabsf(_triplet_target(0) - tmp_target(0)) > 0.001f || fabsf(_triplet_target(1) - tmp_target(1)) > 0.001f
+	      || fabsf(_triplet_target(2) - tmp_target(2)) > 0.001f)) {
+		// nothing has changed: just keep old waypoints
+		triplet_update = false;
+	} else {
+		printf("updated target: %f %f %f \n", (double)tmp_target(0), (double)tmp_target(1), (double)tmp_target(2));
+		_triplet_target = tmp_target;
+
+		_prev_prev_wp = _triplet_prev_wp;
+
+		if (_isFinite(_sub_triplet_setpoint->get().previous) && _sub_triplet_setpoint->get().previous.valid) {
+			map_projection_project(&_reference_position, _sub_triplet_setpoint->get().previous.lat,
+					       _sub_triplet_setpoint->get().previous.lon, &_triplet_prev_wp(0), &_triplet_prev_wp(1));
+			_triplet_prev_wp(2) = -(_sub_triplet_setpoint->get().previous.alt - _reference_altitude);
+
+		} else {
+			_triplet_prev_wp = _position;
+		}
+
+		if (_type == WaypointType::loiter) {
+			_triplet_next_wp = _triplet_target;
+
+		} else if (_isFinite(_sub_triplet_setpoint->get().next) && _sub_triplet_setpoint->get().next.valid) {
+			map_projection_project(&_reference_position, _sub_triplet_setpoint->get().next.lat,
+					       _sub_triplet_setpoint->get().next.lon, &_triplet_next_wp(0), &_triplet_next_wp(1));
+			_triplet_next_wp(2) = -(_sub_triplet_setpoint->get().next.alt - _reference_altitude);
+
+		} else {
+			_triplet_next_wp = _triplet_target;
+		}
+	}
 
 	// check if target is valid
 	_yaw_setpoint = _sub_triplet_setpoint->get().current.yaw;
@@ -145,51 +188,27 @@ bool FlightTaskAuto::_evaluateTriplets()
 		_yaw_setpoint = NAN;
 	}
 
-	// Check if anything has changed. We do that by comparing the target
-	// setpoint to the previous target.
-	// TODO This is a hack and it would be much better if the navigator only sends out a waypoints once tthey have changed.
-
-	// dont't do any updates if the current target has not changed
-	if (!(fabsf(target(0) - _target(0)) > 0.001f || fabsf(target(1) - _target(1)) > 0.001f
-	      || fabsf(target(2) - _target(2)) > 0.001f)) {
-		// nothing has changed: just keep old waypoints
-		return true;
-	}
-
 	// update all waypoints
-	_target = target;
+	//_target = target;
 
-	if (!PX4_ISFINITE(_target(0)) || !PX4_ISFINITE(_target(1))) {
+	if (!PX4_ISFINITE(_triplet_target(0)) || !PX4_ISFINITE(_triplet_target(1))) {
 		// Horizontal target is not finite. */
-		_target(0) = _position(0);
-		_target(1) = _position(1);
+		_triplet_target(0) = _position(0);
+		_triplet_target(1) = _position(1);
 	}
 
-	if (!PX4_ISFINITE(_target(2))) {
-		_target(2) = _position(2);
+	if (!PX4_ISFINITE(_triplet_target(2))) {
+		_triplet_target(2) = _position(2);
 	}
 
-	_prev_prev_wp = _prev_wp;
+	
 
-	if (_isFinite(_sub_triplet_setpoint->get().previous) && _sub_triplet_setpoint->get().previous.valid) {
-		map_projection_project(&_reference_position, _sub_triplet_setpoint->get().previous.lat,
-				       _sub_triplet_setpoint->get().previous.lon, &_prev_wp(0), &_prev_wp(1));
-		_prev_wp(2) = -(_sub_triplet_setpoint->get().previous.alt - _reference_altitude);
-
-	} else {
-		_prev_wp = _position;
-	}
-
-	if (_type == WaypointType::loiter) {
-		_next_wp = _target;
-
-	} else if (_isFinite(_sub_triplet_setpoint->get().next) && _sub_triplet_setpoint->get().next.valid) {
-		map_projection_project(&_reference_position, _sub_triplet_setpoint->get().next.lat,
-				       _sub_triplet_setpoint->get().next.lon, &_next_wp(0), &_next_wp(1));
-		_next_wp(2) = -(_sub_triplet_setpoint->get().next.alt - _reference_altitude);
-
-	} else {
-		_next_wp = _target;
+	State _previous_state = _current_state;
+	_current_state = _getCurrentState();
+	bool state_update = (_current_state != _previous_state) ? true : false;
+	printf("state_update %d triplet_update %d \n", state_update, triplet_update);
+	if (triplet_update || state_update) {
+		_updateInternalWaypoints();
 	}
 
 	return true;
@@ -251,4 +270,209 @@ matrix::Vector2f FlightTaskAuto::_getTargetVelocityXY()
 		// just return zero speed
 		return matrix::Vector2f{};
 	}
+}
+
+State FlightTaskAuto::_getCurrentState()
+{
+	Vector2f u_prev_to_target = Vector2f(&(_triplet_target - _triplet_prev_wp)(0)).unit_or_zero();
+	Vector2f pos_to_target = Vector2f(&(_triplet_target - _position)(0));
+	Vector2f prev_to_pos = Vector2f(&(_position - _triplet_prev_wp)(0));
+	_closest_pt = Vector2f(&_triplet_prev_wp(0)) + u_prev_to_target * (prev_to_pos * u_prev_to_target);
+
+
+	State return_state = State::none;
+
+	if (u_prev_to_target * pos_to_target < 0.0f) {
+		return_state = State::target_behind;
+		printf("\033[1;32m target_behind \033[0m\n");
+	} else if (u_prev_to_target * prev_to_pos < 0.0f && prev_to_pos.length() > _mc_cruise_speed) {
+		printf("\033[1;33m previous_infront \033[0m\n");
+		return_state = State::previous_infront;
+	} else if (Vector2f(Vector2f(&_position(0)) - _closest_pt).length() > _mc_cruise_speed) {
+		printf("\033[1;34m offtrack \033[0m\n");
+		return_state = State::offtrack;
+	} else {
+		printf("\033[1;35m none \033[0m\n");
+	}
+
+	return return_state;
+}
+
+
+void FlightTaskAuto::_updateInternalWaypoints()
+{
+	// The internal Waypoints might differ from previous_wp and target. The cases where it differs:
+	// 1. The vehicle already passed the target -> go straight to target
+	// 2. The vehicle is more than cruise speed in front of previous waypoint -> go straight to previous waypoint
+	// 3. The vehicle is more than cruise speed from track -> go straight to closest point on track
+	//
+	// If a new target is available, then the speed at the target is computed from the angle previous-target-next.
+
+	// Adjust destination and origin based on current vehicle state.
+	// Vector2f u_prev_to_target = Vector2f(&(_target - _prev_wp)(0)).unit_or_zero();
+	// Vector2f pos_to_target = Vector2f(&(_target - _position)(0));
+	// Vector2f prev_to_pos = Vector2f(&(_position - _prev_wp)(0));
+	// Vector2f closest_pt = Vector2f(&_prev_wp(0)) + u_prev_to_target * (prev_to_pos * u_prev_to_target);
+
+	//if (u_prev_to_target * pos_to_target < 0.0f) {
+
+		// Target is behind. */
+		if (_current_state == State::target_behind) {
+
+			_target = _triplet_target;
+			_prev_wp = _position;
+			_next_wp = _triplet_next_wp;
+			//_current_state = State::target_behind;
+
+			float angle = 2.0f;
+			_speed_at_target = 0.0f;
+
+			// angle = cos(x) + 1.0
+			// angle goes from 0 to 2 with 0 = large angle, 2 = small angle:   0 = PI ; 2 = PI*0
+
+			if (Vector2f(&(_target - _next_wp)(0)).length() > 0.001f &&
+			    (Vector2f(&(_target - _prev_wp)(0)).length() > NAV_ACC_RAD.get())) {
+
+				angle = Vector2f(&(_target - _prev_wp)(0)).unit_or_zero()
+					* Vector2f(&(_target - _next_wp)(0)).unit_or_zero()
+					+ 1.0f;
+				_speed_at_target = _getVelocityFromAngle(angle);
+			}
+		}
+
+	//} else if (u_prev_to_target * prev_to_pos < 0.0f && prev_to_pos.length() > _mc_cruise_speed) {
+
+		// Current position is more than cruise speed in front of previous setpoint.
+		if (_current_state == State::previous_infront) {
+			_next_wp = _triplet_target;
+			_target = _triplet_prev_wp;
+			_prev_wp = _position;
+		//	_current_state = State::previous_infront;
+
+			float angle = 2.0f;
+			_speed_at_target = 0.0f;
+
+			// angle = cos(x) + 1.0
+			// angle goes from 0 to 2 with 0 = large angle, 2 = small angle:   0 = PI ; 2 = PI*0
+			if (Vector2f(&(_target - _next_wp)(0)).length() > 0.001f &&
+			    (Vector2f(&(_target - _prev_wp)(0)).length() > NAV_ACC_RAD.get())) {
+
+				angle = Vector2f(&(_target - _prev_wp)(0)).unit_or_zero()
+					* Vector2f(&(_target - _next_wp)(0)).unit_or_zero()
+					+ 1.0f;
+				_speed_at_target = _getVelocityFromAngle(angle);
+			}
+
+		}
+
+	//} else if (Vector2f(Vector2f(&_position(0)) - closest_pt).length() > _mc_cruise_speed) {
+
+		// Vehicle is more than cruise speed off track.
+		if (_current_state == State::offtrack) {
+			_next_wp = _triplet_target;
+			_target = matrix::Vector3f(_closest_pt(0), _closest_pt(1), _triplet_target(2));
+			_prev_wp = _position;
+			//_current_state = State::offtrack;
+
+			float angle = 2.0f;
+			_speed_at_target = 0.0f;
+
+			// angle = cos(x) + 1.0
+			// angle goes from 0 to 2 with 0 = large angle, 2 = small angle:   0 = PI ; 2 = PI*0
+			if (Vector2f(&(_target - _next_wp)(0)).length() > 0.001f &&
+			    (Vector2f(&(_target - _prev_wp)(0)).length() > NAV_ACC_RAD.get())) {
+
+				angle = Vector2f(&(_target - _prev_wp)(0)).unit_or_zero()
+					* Vector2f(&(_target - _next_wp)(0)).unit_or_zero()
+					+ 1.0f;
+				_speed_at_target = _getVelocityFromAngle(angle);
+			}
+
+		}
+
+	//} else {
+
+		if (_current_state == State::none) {
+			// A new target is available. Update speed at target.*/
+			_target = _triplet_target;
+			_prev_wp = _triplet_prev_wp;
+			_next_wp = _triplet_next_wp;
+			//_current_state = State::none;
+
+			float angle = 2.0f;
+			_speed_at_target = 0.0f;
+
+			// angle = cos(x) + 1.0
+			// angle goes from 0 to 2 with 0 = large angle, 2 = small angle:   0 = PI ; 2 = PI*0
+			if (Vector2f(&(_target - _next_wp)(0)).length() > 0.001f &&
+			    (Vector2f(&(_target - _prev_wp)(0)).length() > NAV_ACC_RAD.get())) {
+
+				angle =
+					Vector2f(&(_target - _prev_wp)(0)).unit_or_zero()
+					* Vector2f(&(_target - _next_wp)(0)).unit_or_zero()
+					+ 1.0f;
+				_speed_at_target = _getVelocityFromAngle(angle);
+			}
+		}
+	//}
+		printf("intenal wp prev %f %f, target %f %f %f, next %f %f \n", (double)_prev_wp(0), (double)_prev_wp(1),
+			(double)_target(0), (double)_target(1), (double)_target(2), (double)_next_wp(0), (double)_next_wp(1));
+}
+
+float FlightTaskAuto::_getVelocityFromAngle(const float angle)
+{
+	// minimum cruise speed when passing waypoint
+	float min_cruise_speed = 0.0f;
+
+	// make sure that cruise speed is larger than minimum
+	if ((_mc_cruise_speed - min_cruise_speed) < SIGMA_NORM) {
+		return _mc_cruise_speed;
+	}
+
+	// Middle cruise speed is a number between maximum cruising speed and minimum cruising speed and corresponds to speed at angle of 90degrees.
+	// It needs to be always larger than minimum cruise speed.
+	float middle_cruise_speed = MPC_CRUISE_90.get();
+
+	if ((middle_cruise_speed - min_cruise_speed) < SIGMA_NORM) {
+		middle_cruise_speed = min_cruise_speed + SIGMA_NORM;
+	}
+
+	if ((_mc_cruise_speed - middle_cruise_speed) < SIGMA_NORM) {
+		middle_cruise_speed = (_mc_cruise_speed + min_cruise_speed) * 0.5f;
+	}
+
+	// If middle cruise speed is exactly in the middle, then compute speed linearly.
+	bool use_linear_approach = false;
+
+	if (((_mc_cruise_speed + min_cruise_speed) * 0.5f) - middle_cruise_speed < SIGMA_NORM) {
+		use_linear_approach = true;
+	}
+
+	// compute speed sp at target
+	float speed_close;
+
+	if (use_linear_approach) {
+
+		// velocity close to target adjusted to angle:
+		// vel_close =  m*x+q
+		float slope = -(_mc_cruise_speed - min_cruise_speed) / 2.0f;
+		speed_close = slope * angle + _mc_cruise_speed;
+
+	} else {
+
+		// Speed close to target adjusted to angle x.
+		// speed_close = a *b ^x + c; where at angle x = 0 -> speed_close = cruise; angle x = 1 -> speed_close = middle_cruise_speed (this means that at 90degrees
+		// the velocity at target is middle_cruise_speed);
+		// angle x = 2 -> speed_close = min_cruising_speed
+
+		// from maximum cruise speed, minimum cruise speed and middle cruise speed compute constants a, b and c
+		float a = -((middle_cruise_speed - _mc_cruise_speed) * (middle_cruise_speed - _mc_cruise_speed))
+			  / (2.0f * middle_cruise_speed - _mc_cruise_speed - min_cruise_speed);
+		float c = _mc_cruise_speed - a;
+		float b = (middle_cruise_speed - c) / a;
+		speed_close = a * powf(b, angle) + c;
+	}
+
+	// speed_close needs to be in between max and min
+	return math::constrain(speed_close, min_cruise_speed, _mc_cruise_speed);
 }
