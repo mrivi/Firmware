@@ -99,17 +99,8 @@ protected:
 
 	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTask,
 					(ParamFloat<px4::params::MPC_XY_CRUISE>) MPC_XY_CRUISE,
-					(ParamFloat<px4::params::MPC_LAND_SPEED>) MPC_LAND_SPEED,
 					(ParamFloat<px4::params::MPC_CRUISE_90>) MPC_CRUISE_90, // speed at corner when angle is 90 degrees move to line
-					(ParamFloat<px4::params::NAV_ACC_RAD>) NAV_ACC_RAD, // acceptance radius at which waypoints are updated move to line
-					(ParamFloat<px4::params::MPC_LAND_ALT1>) MPC_LAND_ALT1, // altitude at which speed limit downwards reaches maximum speed
-					(ParamFloat<px4::params::MPC_LAND_ALT2>) MPC_LAND_ALT2, // altitude at which speed limit downwards reached minimum speed
-					(ParamFloat<px4::params::MPC_TILTMAX_LND>) MPC_TILTMAX_LND,
-					(ParamFloat<px4::params::MPC_TKO_SPEED>) MPC_TKO_SPEED,
-					(ParamFloat<px4::params::MIS_YAW_ERR>) MIS_YAW_ERR, // yaw-error threshold
-					(ParamFloat<px4::params::MPC_ACC_UP_MAX>) MPC_ACC_UP_MAX,
-					(ParamFloat<px4::params::MPC_ACC_DOWN_MAX>) MPC_ACC_DOWN_MAX,
-					(ParamFloat<px4::params::MPC_ACC_HOR>) MPC_ACC_HOR // acceleration in flight
+					(ParamFloat<px4::params::NAV_ACC_RAD>) NAV_ACC_RAD // acceptance radius at which waypoints are updated move to line
 				       ); /**< Default mc cruise speed.*/
 
 

@@ -55,11 +55,13 @@ protected:
 
 	float _alt_above_ground{0.0f}; /**< If home provided, then it is altitude above home, otherwise it is altitude above local position reference. */
 
-
-
-	// DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskAuto,
-
-	// 			       )
+	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskAuto,
+					(ParamFloat<px4::params::MPC_LAND_SPEED>) MPC_LAND_SPEED,
+					(ParamFloat<px4::params::MPC_TILTMAX_LND>) MPC_TILTMAX_LND,
+					(ParamFloat<px4::params::MPC_LAND_ALT1>) MPC_LAND_ALT1, // altitude at which speed limit downwards reaches maximum speed
+					(ParamFloat<px4::params::MPC_LAND_ALT2>) MPC_LAND_ALT2, // altitude at which speed limit downwards reached minimum speed
+					(ParamFloat<px4::params::MPC_TKO_SPEED>) MPC_TKO_SPEED
+				       );
 
 	virtual void _generateSetpoints() = 0; /**< Generate velocity and position setpoint for following line. */
 
