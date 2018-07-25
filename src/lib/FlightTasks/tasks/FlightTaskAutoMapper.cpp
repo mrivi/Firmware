@@ -99,9 +99,6 @@ void FlightTaskAutoMapper::_reset()
 	// Set setpoints equal current state.
 	_velocity_setpoint = _velocity;
 	_position_setpoint = _position;
-	// _yaw_setpoint = _yaw;
-	// _target = _position;
-	// _prev_wp = _position; 
 	_speed_at_target = 0.0f;
 }
 

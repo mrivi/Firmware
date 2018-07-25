@@ -51,7 +51,6 @@ bool FlightTaskAutoLine::activate()
 
 void FlightTaskAutoLine::_generateSetpoints()
 {
-	//_updateInternalWaypoints();
 	_generateAltitudeSetpoints();
 	_generateXYsetpoints();
 

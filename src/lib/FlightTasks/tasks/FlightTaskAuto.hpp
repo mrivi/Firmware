@@ -62,11 +62,11 @@ enum class WaypointType : int {
 };
 
 enum class State {
-		offtrack, /**< Vehicle is more than cruise speed away from track */
-		target_behind, /**< Vehicle is in front of target. */
-		previous_infront, /**< Vehilce is behind previous waypoint.*/
-		none /**< Vehicle is in normal tracking mode from triplet previous to triplet target */
-	};
+	offtrack, /**< Vehicle is more than cruise speed away from track */
+	target_behind, /**< Vehicle is in front of target. */
+	previous_infront, /**< Vehilce is behind previous waypoint.*/
+	none /**< Vehicle is in normal tracking mode from triplet previous to triplet target */
+};
 
 class FlightTaskAuto : public FlightTask
 {
@@ -92,7 +92,7 @@ protected:
 	WaypointType _type{WaypointType::idle}; /**< Type of current target triplet. */
 	uORB::Subscription<home_position_s> *_sub_home_position{nullptr};
 
-	
+
 	State _current_state{State::none};
 
 	float _speed_at_target = 0.0f; /**< Desired velocity at target. */
@@ -110,7 +110,7 @@ protected:
 					(ParamFloat<px4::params::MPC_ACC_UP_MAX>) MPC_ACC_UP_MAX,
 					(ParamFloat<px4::params::MPC_ACC_DOWN_MAX>) MPC_ACC_DOWN_MAX,
 					(ParamFloat<px4::params::MPC_ACC_HOR>) MPC_ACC_HOR // acceleration in flight
-					); /**< Default mc cruise speed.*/
+				       ); /**< Default mc cruise speed.*/
 
 
 private:

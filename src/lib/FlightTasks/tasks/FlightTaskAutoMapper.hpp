@@ -53,15 +53,12 @@ public:
 
 protected:
 
-	// matrix::Vector3f _destination{}; *< Current target. Is not necessarily the same as triplet target. 
-	// matrix::Vector3f _origin{}; /**< Previous waypoint. Is not necessarily the same as triplet previous. */
-	
 	float _alt_above_ground{0.0f}; /**< If home provided, then it is altitude above home, otherwise it is altitude above local position reference. */
 
-	
+
 
 	// DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskAuto,
-					
+
 	// 			       )
 
 	virtual void _generateSetpoints() = 0; /**< Generate velocity and position setpoint for following line. */

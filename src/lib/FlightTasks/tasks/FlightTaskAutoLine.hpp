@@ -52,16 +52,16 @@ public:
 protected:
 
 	// DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskAutoMapper,
-					
+
 	// 			       )
 
 	void _generateSetpoints() override;
-	
+
 	void _generateAltitudeSetpoints(); /**< Generate velocity and position setpoints for following line along z. */
 	void _generateXYsetpoints(); /**< Generate velocity and position setpoints for following line along xy. */
 
 private:
-	
+
 	bool _highEnoughForLandingGear(); /**< Checks if gears can be lowered. */
 
 };
