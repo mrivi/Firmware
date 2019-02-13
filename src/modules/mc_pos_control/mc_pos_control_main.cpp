@@ -1195,20 +1195,14 @@ bool
 MulticopterPositionControl::use_obstacle_avoidance()
 {
 	if (MPC_OBS_AVOID.get()) {
-		const bool avoidance_data_timeout = hrt_elapsed_time((hrt_abstime *)&_traj_wp_avoidance.timestamp) > TRAJECTORY_STREAM_TIMEOUT_US;
 		const bool avoidance_point_valid = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].point_valid == true;
 		const bool in_mission = _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION;
-		const bool in_rtl = _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_RTL;
 
-		// switch to hold mode to stop when we loose external avoidance data during a mission
-		if (avoidance_data_timeout && in_mission) {
-			send_vehicle_cmd_do(vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER);
-		}
-
-		if ((in_mission || in_rtl) && !avoidance_data_timeout && avoidance_point_valid) {
+		if ((in_mission) && avoidance_point_valid) {
 			return true;
 		}
 	}
+	printf("~~~~~~~~~~~~~ DONT USE AVOIDANCE ~~~~~~~~~~~~~\n");
 	return false;
 }
 

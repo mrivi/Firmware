@@ -137,6 +137,8 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 
 		// Get various path specific vectors. */
 		Vector2f pos_traj;
+		_trajectory[0].setCurrentPosition(_position(0));
+		_trajectory[1].setCurrentPosition(_position(1));
 		pos_traj(0) = _trajectory[0].getCurrentPosition();
 		pos_traj(1) = _trajectory[1].getCurrentPosition();
 		Vector2f pos_sp_xy(_position_setpoint);
@@ -146,12 +148,21 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 		Vector2f closest_pt = Vector2f(_prev_wp) + u_prev_to_dest * (prev_to_pos * u_prev_to_dest);
 		Vector2f u_pos_traj_to_dest_xy(Vector2f(pos_traj_to_dest).unit_or_zero());
 
+		printf("FT pos %f %f goal %f %f \n", (double)pos_traj(0), (double)pos_traj(1), (double)pos_sp_xy(0), (double)pos_sp_xy(1));
+		printf("FT pos_to_goal %f %f \n", (double)pos_traj_to_dest(0), (double)pos_traj_to_dest(1));
+		printf("FT prev_goal %f %f \n", (double)_prev_wp(0), (double)_prev_wp(1));
+		printf("FT u_prev_to_goal %f %f \n", (double)u_prev_to_dest(0), (double)u_prev_to_dest(1));
+		printf("FT prev_to_pos %f %f \n", (double)prev_to_pos(0), (double)prev_to_pos(1));
+		printf("FT closest point %f %f \n", (double)closest_pt(0), (double)closest_pt(1));
+
+
 		float speed_sp_track = Vector2f(pos_traj_to_dest).length() * MPC_XY_TRAJ_P.get();
 		speed_sp_track = math::constrain(speed_sp_track, 0.0f, MPC_XY_CRUISE.get());
 		Vector2f vel_sp_xy = u_pos_traj_to_dest_xy * speed_sp_track;
+		printf("speed_sp_track %f vel_sp_xy %f %f \n", (double)speed_sp_track, (double)vel_sp_xy(0), (double)vel_sp_xy(1));
 
 		for (int i = 0; i < 2; i++) {
-			// If available, constrain the velocity using _velocity_setpoint(.)
+			// If available, constrain the velocity using _velocity_setpoint(.) 86.637009 5.521252
 			if (PX4_ISFINITE(_velocity_setpoint(i))) {
 				_velocity_setpoint(i) = constrain_one_side(vel_sp_xy(i), _velocity_setpoint(i));
 
