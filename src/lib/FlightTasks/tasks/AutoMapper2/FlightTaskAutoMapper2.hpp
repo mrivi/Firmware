@@ -41,11 +41,12 @@
 #pragma once
 
 #include "FlightTaskAuto.hpp"
+#include "lib/FlightTasks/tasks/Utility/ObstacleAvoidance.hpp"
 
 class FlightTaskAutoMapper2 : public FlightTaskAuto
 {
 public:
-	FlightTaskAutoMapper2() = default;
+	FlightTaskAutoMapper2();
 	virtual ~FlightTaskAutoMapper2() = default;
 	bool activate() override;
 	bool update() override;
@@ -69,7 +70,6 @@ protected:
 	void _prepareVelocitySetpoints();
 	void _prepareTakeoffSetpoints();
 	void _preparePositionSetpoints();
-	void _prepareAvoidanceSetpoints();
 
 	void _updateAltitudeAboveGround(); /**< Computes altitude above ground based on sensors available. */
 	void updateParams() override; /**< See ModuleParam class */
@@ -79,4 +79,5 @@ private:
 	void _reset(); /**< Resets member variables to current vehicle state */
 	WaypointType _type_previous{WaypointType::idle}; /**< Previous type of current target triplet. */
 	bool _highEnoughForLandingGear(); /**< Checks if gears can be lowered. */
+	ObstacleAvoidance _obstacle_avoidance;
 };

@@ -40,6 +40,12 @@
 
 using namespace matrix;
 
+FlightTaskAutoMapper2::FlightTaskAutoMapper2() :
+	_obstacle_avoidance(this)
+{
+
+}
+
 bool FlightTaskAutoMapper2::activate()
 {
 	bool ret = FlightTaskAuto::activate();
@@ -91,9 +97,9 @@ bool FlightTaskAutoMapper2::update()
 		break;
 	}
 
-	if (MPC_OBS_AVOID.get()) {
-		_prepareAvoidanceSetpoints();
-	}
+
+	_obstacle_avoidance.prepareAvoidanceSetpoints(_position_setpoint, _velocity_setpoint, _yaw_setpoint, _yawspeed_setpoint);
+
 
 	_generateSetpoints();
 
@@ -162,32 +168,23 @@ void FlightTaskAutoMapper2::_preparePositionSetpoints()
 	_velocity_setpoint = Vector3f(NAN, NAN, NAN); // No special velocity limitations
 }
 
-void FlightTaskAutoMapper2::_prepareAvoidanceSetpoints()
-{
-	// const bool avoidance_data_timeout = hrt_elapsed_time((hrt_abstime *)&_traj_wp_avoidance.timestamp) > TRAJECTORY_STREAM_TIMEOUT_US;
-	const bool avoidance_point_valid = _sub_vehicle_trajectory_waypoint->get().waypoints[vehicle_trajectory_waypoint_s::POINT_0].point_valid == true;
-
-	if (avoidance_point_valid) {
-		_position_setpoint = _sub_vehicle_trajectory_waypoint->get().waypoints[vehicle_trajectory_waypoint_s::POINT_0].position;
-		_velocity_setpoint = _sub_vehicle_trajectory_waypoint->get().waypoints[vehicle_trajectory_waypoint_s::POINT_0].velocity;
-		// setpoint.x = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].position[0];
-		// setpoint.y = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].position[1];
-		// setpoint.z = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].position[2];
-		//
-		// setpoint.vx = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].velocity[0];
-		// setpoint.vy = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].velocity[1];
-		// setpoint.vz = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].velocity[2];
-		//
-		// setpoint.acc_x = setpoint.acc_y = setpoint.acc_z = NAN;
-		//
-		// setpoint.yaw = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].yaw;
-		// setpoint.yawspeed = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].yaw_speed;
-		_yaw_setpoint =  _sub_vehicle_trajectory_waypoint->get().waypoints[vehicle_trajectory_waypoint_s::POINT_0].yaw;
-
-		printf("pos sp %f %f %f yaw %f \n", (double)_position_setpoint(0), (double)_position_setpoint(1), (double)_position_setpoint(2), (double)_yaw_setpoint);
-
-	}
-}
+// void FlightTaskAutoMapper2::_prepareAvoidanceSetpoints()
+// {
+// 	// const bool avoidance_data_timeout = hrt_elapsed_time((hrt_abstime *)&_traj_wp_avoidance.timestamp) > TRAJECTORY_STREAM_TIMEOUT_US;
+// 	const bool avoidance_point_valid = _sub_vehicle_trajectory_waypoint->get().waypoints[vehicle_trajectory_waypoint_s::POINT_0].point_valid == true;
+//
+// 	if (avoidance_point_valid) {
+// 		_position_setpoint = _sub_vehicle_trajectory_waypoint->get().waypoints[vehicle_trajectory_waypoint_s::POINT_0].position;
+// 		_velocity_setpoint = _sub_vehicle_trajectory_waypoint->get().waypoints[vehicle_trajectory_waypoint_s::POINT_0].velocity;
+// 		_yaw_setpoint =  _sub_vehicle_trajectory_waypoint->get().waypoints[vehicle_trajectory_waypoint_s::POINT_0].yaw;
+// 		_yawspeed_setpoint = _sub_vehicle_trajectory_waypoint->get().waypoints[vehicle_trajectory_waypoint_s::POINT_0].yaw_speed;
+//
+//
+// 		printf("pos sp %f %f %f yaw %f \n", (double)_position_setpoint(0), (double)_position_setpoint(1), (double)_position_setpoint(2), (double)_yaw_setpoint);
+// 		printf("vel sp %f %f %f yawspeed %f \n", (double)_velocity_setpoint(0), (double)_velocity_setpoint(1), (double)_velocity_setpoint(2), (double)_yawspeed_setpoint);
+//
+// 	}
+// }
 
 void FlightTaskAutoMapper2::_updateAltitudeAboveGround()
 {
