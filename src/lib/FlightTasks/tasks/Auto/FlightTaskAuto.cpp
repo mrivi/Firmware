@@ -60,6 +60,10 @@ bool FlightTaskAuto::initializeSubscriptions(SubscriptionArray &subscription_arr
 		return false;
 	}
 
+	if (!subscription_array.get(ORB_ID(vehicle_trajectory_waypoint), _sub_vehicle_trajectory_waypoint)) {
+		return false;
+	}
+
 	return true;
 }
 

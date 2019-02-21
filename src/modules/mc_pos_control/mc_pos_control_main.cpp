@@ -1169,19 +1169,19 @@ MulticopterPositionControl::update_avoidance_waypoint_desired(PositionControlSta
 void
 MulticopterPositionControl::execute_avoidance_waypoint(vehicle_local_position_setpoint_s &setpoint)
 {
-	setpoint.x = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].position[0];
-	setpoint.y = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].position[1];
-	setpoint.z = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].position[2];
-
-	setpoint.vx = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].velocity[0];
-	setpoint.vy = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].velocity[1];
-	setpoint.vz = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].velocity[2];
-
-	setpoint.acc_x = setpoint.acc_y = setpoint.acc_z = NAN;
-
-	setpoint.yaw = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].yaw;
-	setpoint.yawspeed = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].yaw_speed;
-	Vector3f(NAN, NAN, NAN).copyTo(setpoint.thrust);
+	// setpoint.x = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].position[0];
+	// setpoint.y = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].position[1];
+	// setpoint.z = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].position[2];
+	//
+	// setpoint.vx = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].velocity[0];
+	// setpoint.vy = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].velocity[1];
+	// setpoint.vz = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].velocity[2];
+	//
+	// setpoint.acc_x = setpoint.acc_y = setpoint.acc_z = NAN;
+	//
+	// setpoint.yaw = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].yaw;
+	// setpoint.yawspeed = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].yaw_speed;
+	// Vector3f(NAN, NAN, NAN).copyTo(setpoint.thrust);
 }
 
 void

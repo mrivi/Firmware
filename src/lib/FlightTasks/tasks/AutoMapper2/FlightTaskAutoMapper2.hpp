@@ -69,6 +69,7 @@ protected:
 	void _prepareVelocitySetpoints();
 	void _prepareTakeoffSetpoints();
 	void _preparePositionSetpoints();
+	void _prepareAvoidanceSetpoints();
 
 	void _updateAltitudeAboveGround(); /**< Computes altitude above ground based on sensors available. */
 	void updateParams() override; /**< See ModuleParam class */

@@ -100,6 +100,7 @@ protected:
 	float _mc_cruise_speed{0.0f}; /**< Requested cruise speed. If not valid, default cruise speed is used. */
 	WaypointType _type{WaypointType::idle}; /**< Type of current target triplet. */
 	uORB::Subscription<home_position_s> *_sub_home_position{nullptr};
+	uORB::Subscription<vehicle_trajectory_waypoint_s> *_sub_vehicle_trajectory_waypoint{nullptr};
 
 	State _current_state{State::none};
 	float _target_acceptance_radius = 0.0f; /**< Acceptances radius of the target */
@@ -118,6 +119,7 @@ private:
 	bool _yaw_lock = false; /**< if within acceptance radius, lock yaw to current yaw */
 	uORB::Subscription<position_setpoint_triplet_s> *_sub_triplet_setpoint{nullptr};
 	uORB::Subscription<vehicle_status_s> *_sub_vehicle_status{nullptr};
+
 
 	matrix::Vector3f
 	_triplet_target; /**< current triplet from navigator which may differ from the intenal one (_target) depending on the vehicle state. */
