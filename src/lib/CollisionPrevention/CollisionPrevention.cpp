@@ -216,7 +216,7 @@ void CollisionPrevention::calculateConstrainedSetpoint(Vector2f &setpoint,
 			for (int i = 0; i < distances_array_size; i++) {
 
 				if (obstacle.distances[i] < obstacle.max_distance &&
-					    obstacle.distances[i] > obstacle.min_distance && i * obstacle.increment_f < 360) {
+				    obstacle.distances[i] > obstacle.min_distance && (float)i * obstacle.increment_f < 360.f) {
 					float distance = obstacle.distances[i] / 100.0f; //convert to meters
 					float angle = math::radians((float)i * obstacle.increment_f);
 
