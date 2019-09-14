@@ -34,5 +34,7 @@ px4_add_module(
 	MODULE drivers__s50mv85g
 	MAIN s50mv85g
 	SRCS
-		s50mv85g.cpp
+		s50mv85g_main.cpp
+		S50MV85G.cpp
+		S50MV85G.hpp
 	)
