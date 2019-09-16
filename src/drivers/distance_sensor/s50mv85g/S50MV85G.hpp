@@ -72,8 +72,8 @@
 # error "add the required spi dev from board_config.h here"
 #endif
 
-#define PMW3901_DEVICE_PATH "/dev/pmw3901"
-#define PMW3901_SPI_BUS_SPEED (2000000L) // 2MHz
+#define S50MV85G_DEVICE_PATH "/dev/s50mv85g"
+#define S50MV85G_SPI_BUS_SPEED (200000L) // 2MHz
 #define PMW3901_SAMPLE_INTERVAL 10000 /*  10 ms */
 #define PMW3901_US 1000 /*   1 ms */
 

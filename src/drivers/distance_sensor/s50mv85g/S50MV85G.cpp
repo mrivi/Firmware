@@ -37,7 +37,7 @@ static constexpr uint32_t TIME_us_TSWW = 11; //  - actually 10.5us
 
 
 S50MV85G::S50MV85G(int bus, enum Rotation rotation) :
-	SPI("PMW3901", PMW3901_DEVICE_PATH, bus, PMW3901_SPIDEV, SPIDEV_MODE0, PMW3901_SPI_BUS_SPEED),
+	SPI("S50MV85G", S50MV85G_DEVICE_PATH, bus, PMW3901_SPIDEV, SPIDEV_MODE3, S50MV85G_SPI_BUS_SPEED),
 	ScheduledWorkItem(px4::device_bus_to_wq(get_device_id())),
 	_sample_perf(perf_alloc(PC_ELAPSED, "pmw3901: read")),
 	_comms_errors(perf_alloc(PC_COUNT, "pmw3901: com err")),
@@ -91,9 +91,16 @@ S50MV85G::probe()
 	// if (data[0] == 0x49) {
 	// 	return OK;
 	// }
+	uint8_t response[4];
+	int ret = readMeas(0x0C, response, sizeof(response));
+	printf("response %x %x %x %x\n", response[0], response[1], response[2], response[3]);
+	printf("%d \n", ret);
+	readMeas(0x0D, response, sizeof(response));
+	printf("response %x %x %x %x\n", response[0], response[1], response[2], response[3]);
+	return OK;
 
 	// not found on any address
-	return -EIO;
+	// return -EIO;
 }
 
 void
@@ -130,10 +137,12 @@ S50MV85G::sendCommand(unsigned reg)
 	cmd[0] = DIR_WRITE(reg);
 
 	ret = transfer(&cmd[0], nullptr, 1);
+	printf("spi::transfer returned %d \n", ret);
+
 
 	if (OK != ret) {
 		perf_count(_comms_errors);
-		DEVICE_LOG("spi::transfer returned %d", ret);
+		printf("spi::transfer returned %d \n", ret);
 		return ret;
 	}
 
@@ -170,7 +179,7 @@ int S50MV85G::readMeas(unsigned cmd, uint8_t *read, uint8_t size)
 
 	if (OK != ret) {
 		perf_count(_comms_errors);
-		DEVICE_LOG("spi::transfer returned %d", ret);
+		printf("spi::transfer returned %d", ret);
 		return ret;
 	}
 
