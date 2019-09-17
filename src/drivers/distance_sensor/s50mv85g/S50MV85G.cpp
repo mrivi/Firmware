@@ -92,11 +92,10 @@ S50MV85G::probe()
 	// 	return OK;
 	// }
 	uint8_t response[4];
-	int ret = readMeas(0x0C, response, sizeof(response));
+	int ret = readMeas(0x0D, response, sizeof(response));
 	printf("response %x %x %x %x ret %d \n", response[0], response[1], response[2], response[3], ret);
 	// readMeas(0x0D, response, sizeof(response));
 	// printf("response %x %x %x %x\n", response[0], response[1], response[2], response[3]);
-	printf("OK %d\n", OK);
 	return OK;
 
 	// not found on any address
@@ -133,9 +132,10 @@ int
 S50MV85G::sendCommand(unsigned reg)
 {
 	int ret;
-	uint8_t cmd[2]; 						// write 1 byte
-	cmd[0] = DIR_WRITE(reg);
-	cmd[1] = crc8(&cmd[0], 1);
+	uint8_t cmd[2];
+	cmd[0] = reg;
+	uint8_t crc = crc8(cmd, 1);
+	cmd[1] = crc;
 	printf("cmd %x CRC %x \n", cmd[0], cmd[1]);
 	ret = transfer(&cmd[0], nullptr, 2);
 
@@ -173,6 +173,7 @@ S50MV85G::sendCommandMulti(unsigned cmd, uint8_t *data, uint8_t size)
 int S50MV85G::readMeas(unsigned cmd, uint8_t *read, uint8_t size)
 {
 	int ret = sendCommand(cmd);
+	usleep(100000);
 	ret |= transfer(nullptr, &read[0], size);
 
 	if (OK != ret) {
