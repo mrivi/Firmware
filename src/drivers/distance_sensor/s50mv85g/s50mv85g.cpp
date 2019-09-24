@@ -63,12 +63,13 @@
 #include <uORB/uORB.h>
 #include <uORB/topics/distance_sensor.h>
 
+using namespace time_literals;
 
 /* Device limits */
 #define S50MV85G_MIN_DISTANCE                               (0.01f) // meters
 #define S50MV85G_MAX_DISTANCE                               (10.f) // meters
 
-#define S50MV85G_MEASURE_INTERVAL                            0.003 //seconds
+#define S50MV85G_MEASURE_INTERVAL                            50_ms //seconds
 #define S50MV85G_DEFAULT_PORT       "/dev/ttyS2" // Default serial port on Pixhawk (TELEM2), baudrate 115200
 
 #define S50MV85G_1D_MEASURAMENT 0x36
@@ -133,83 +134,80 @@ S50MV85G::init()
 {
 	// Intitialize the character device.
 	if (CDev::init() != OK) {
+		printf("CDev::init() fail\n");
 		return PX4_ERROR;
 	}
 
-	// start();
+	start();
 	return PX4_OK;
 }
 
-int
-PMW3901::sendCommand(unsigned cmd)
-{
-	int ret;
-
-	ret = transfer(&cmd, nullptr, 1);
-
-	if (OK != ret) {
-		perf_count(_comms_errors);
-		DEVICE_LOG("spi::transfer returned %d", ret);
-		return ret;
-	}
-
-	px4_usleep(TIME_us_TSWW);
-
-	return ret;
-}
-
-
-
-int
-PMW3901::sendCommandMulti(unsigned cmd, uint8_t *data, uint8_t size)
-{
-	int ret;
-
-	ret = sendCommand(cmd);
-
-	ret |= transfer(&data[0], nullptr, size);
-
-	if (OK != ret) {
-		perf_count(_comms_errors);
-		DEVICE_LOG("spi::transfer returned %d", ret);
-		return ret;
-	}
-
-	px4_usleep(TIME_us_TSWW);
-
-	return ret;
-}
-
-int S50MV85G::readMeas(unsigned cmd, uint_8_t *read, uint8_t size)
-{
-	int ret = sendCommand(cmd);
-	ret |= transfer(nullptr, &read[0], size);
+// int
+// PMW3901::sendCommand(unsigned cmd)
+// {
+// 	int ret;
+//
+// 	ret = transfer(&cmd, nullptr, 1);
+//
+// 	if (OK != ret) {
+// 		perf_count(_comms_errors);
+// 		DEVICE_LOG("spi::transfer returned %d", ret);
+// 		return ret;
+// 	}
+//
+// 	px4_usleep(TIME_us_TSWW);
+//
+// 	return ret;
+// }
 
 
-	if (OK != ret) {
-		perf_count(_comms_errors);
-		DEVICE_LOG("spi::transfer returned %d", ret);
-		return ret;
-	}
 
-	px4_usleep(TIME_us_TSWW);
-
-	return ret;
-}
+// int
+// PMW3901::sendCommandMulti(unsigned cmd, uint8_t *data, uint8_t size)
+// {
+// 	int ret;
+//
+// 	ret = sendCommand(cmd);
+//
+// 	ret |= transfer(&data[0], nullptr, size);
+//
+// 	if (OK != ret) {
+// 		perf_count(_comms_errors);
+// 		DEVICE_LOG("spi::transfer returned %d", ret);
+// 		return ret;
+// 	}
+//
+// 	px4_usleep(TIME_us_TSWW);
+//
+// 	return ret;
+// }
+//
+// int S50MV85G::readMeas(unsigned cmd, uint_8_t *read, uint8_t size)
+// {
+// 	int ret = sendCommand(cmd);
+// 	ret |= transfer(nullptr, &read[0], size);
+//
+//
+// 	if (OK != ret) {
+// 		perf_count(_comms_errors);
+// 		DEVICE_LOG("spi::transfer returned %d", ret);
+// 		return ret;
+// 	}
+//
+// 	px4_usleep(TIME_us_TSWW);
+//
+// 	return ret;
+// }
 
 void S50MV85G::Run()
 {
 	// Ensure the serial port is open.
 	open_serial_port();
 
-	uint8_t command[] = {0x11}; // start auto
-	uint_8_t command_data_output_mode[2] = {0x41, };
-	uint_8_t command_measurament_mode[2] = {0x42, };
-	uint_8_t command_frame_time[5] = {0x43, 0x0, 0x0, 0x0, 0xA};
-	uint_8_t command_1d_measurament[15] = {0x36, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
-	uint_8_t command_spi_config[6] = {0x58, };
-	// int written = ::write(_file_descriptor, command, sizeof(command));
-	sendCommand(command[0]);
+	uint8_t command[] = {0b01010101}; // firmware version
+
+	int written = ::write(_file_descriptor, &command[0], sizeof(command));
+	printf("write %d \n", written);
 
 	// Perform collection.
 	if (collect() == -EAGAIN) {
